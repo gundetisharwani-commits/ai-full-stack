@@ -1,7 +1,7 @@
 import streamlit as st
 from ollama import chat
 
-st.title("YOUR AICHATBOT")
+st.title("YOUR AI CHATBOT: Shakespearean Tutor")
 # messages=[]
 system_message="you are a shakespherean tutor.you explain in 35-40words shortly and clearly"
 # messages.append({
