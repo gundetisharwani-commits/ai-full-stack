@@ -1883,117 +1883,650 @@ elif menu == "🧠 Concept Explorer":
 # ============================================================
 # STUDY PLANNER
 # ============================================================
-
+# ============================================================
+# STUDY PLANNER
+# ============================================================
 elif menu == "📅 Study Planner":
+
+    # --------------------------------------------------------
+    # STUDY PLANNER HEADER
+    # --------------------------------------------------------
 
     st.markdown(
         """
         <div class="hero">
 
-        <h1>
-        Study Planner 📅
-        </h1>
+            <h1>📅 AI Study Planner</h1>
 
-        <p>
-        Build a study plan using topics found in your uploaded material.
-        </p>
+            <p>
+            Turn your uploaded study material into a
+            personalized learning schedule.
+            </p>
 
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    if document_selector():
+    documents = get_uploaded_documents()
 
-        days = st.number_input(
-            "Number of days",
-            min_value=1,
-            max_value=60,
-            value=7
+    if not documents:
+
+        st.warning(
+            "📚 Please upload and process your study material "
+            "from Knowledge Library first."
         )
 
-        hours = st.number_input(
-            "Hours per day",
-            min_value=1,
-            max_value=12,
-            value=3
-        )
+    else:
 
-        focus = st.text_input(
-            "Focus topic (optional)",
-            placeholder="Example: Polity"
-        )
+        # ----------------------------------------------------
+        # SELECT KNOWLEDGE SOURCE
+        # ----------------------------------------------------
 
-        if st.button(
-            "Create Study Plan",
-            type="primary",
-            use_container_width=True
-        ):
-            search_topic = (
-                focus
-                if focus.strip()
-                else "important topics"
+        selected_document = document_selector()
+
+        if selected_document:
+
+            st.markdown(
+                "### 🎯 Build Your Study Plan"
             )
 
-            sources = retrieve_information(
-                search_topic,
-                st.session_state.selected_document,
-                number_of_results=10
+            st.markdown(
+                """
+                <div class="card">
+
+                    <div class="card-title">
+                    Customize your learning plan
+                    </div>
+
+                    <div class="card-text">
+                    EduNexus will use your uploaded material
+                    to create a structured study schedule.
+                    </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
-            if not sources:
+            # ------------------------------------------------
+            # PLAN SETTINGS
+            # ------------------------------------------------
 
-                st.error(
-                    "No relevant topics were found "
-                    "in your uploaded material."
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+
+                days = st.number_input(
+                    "📅 Study Duration",
+                    min_value=1,
+                    max_value=60,
+                    value=7,
+                    step=1
                 )
 
-            else:
+            with col2:
 
-                context = create_context(
-                    sources,
-                    maximum_characters=12000
+                hours = st.number_input(
+                    "⏱️ Hours Per Day",
+                    min_value=1,
+                    max_value=12,
+                    value=3,
+                    step=1
                 )
 
-                with st.spinner(
-                    "Creating your study plan..."
-                ):
+            with col3:
 
-                    answer = generate_ai_response(
-                        f"""
-                        Create a {days}-day study plan.
+                difficulty = st.selectbox(
+                    "⚡ Difficulty",
+                    [
+                        "Beginner",
+                        "Intermediate",
+                        "Advanced"
+                    ]
+                )
 
-                        Study time:
-                        {hours} hours per day.
+            focus = st.text_input(
+                "🎯 Focus Topic",
+                placeholder="Example: Java Collections, DBMS, Operating Systems..."
+            )
 
-                        Focus:
-                        {search_topic}
+            goal = st.selectbox(
+                "🏆 Study Goal",
+                [
+                    "Exam Preparation",
+                    "Complete the Syllabus",
+                    "Quick Revision",
+                    "Deep Understanding",
+                    "Interview Preparation"
+                ]
+            )
 
-                        IMPORTANT:
-                        Use only topics that actually
-                        appear in the supplied material.
+            # ------------------------------------------------
+            # PLAN SUMMARY
+            # ------------------------------------------------
 
-                        Divide the plan into:
-                        • Learning
-                        • Revision
-                        • Practice
-                        • Final review
-                        """,
-                        context
+            total_hours = days * hours
+
+            st.markdown(
+                "### 📊 Plan Overview"
+            )
+
+            c1, c2, c3, c4 = st.columns(4)
+
+            with c1:
+
+                st.markdown(
+                    f"""
+                    <div class="metric-card">
+
+                        <div class="metric-number">
+                        {days}
+                        </div>
+
+                        <div class="metric-label">
+                        Study Days
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            with c2:
+
+                st.markdown(
+                    f"""
+                    <div class="metric-card">
+
+                        <div class="metric-number">
+                        {hours}h
+                        </div>
+
+                        <div class="metric-label">
+                        Daily Study
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            with c3:
+
+                st.markdown(
+                    f"""
+                    <div class="metric-card">
+
+                        <div class="metric-number">
+                        {total_hours}h
+                        </div>
+
+                        <div class="metric-label">
+                        Total Hours
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            with c4:
+
+                difficulty_icon = {
+                    "Beginner": "🟢",
+                    "Intermediate": "🟡",
+                    "Advanced": "🔴"
+                }
+
+                st.markdown(
+                    f"""
+                    <div class="metric-card">
+
+                        <div class="metric-number">
+                        {difficulty_icon[difficulty]}
+                        </div>
+
+                        <div class="metric-label">
+                        {difficulty}
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # ------------------------------------------------
+            # GENERATE PLAN
+            # ------------------------------------------------
+
+            if st.button(
+                "✨ Generate My AI Study Plan",
+                type="primary",
+                use_container_width=True
+            ):
+
+                search_topic = (
+                    focus.strip()
+                    if focus.strip()
+                    else "important topics"
+                )
+
+                sources = retrieve_information(
+                    search_topic,
+                    st.session_state.selected_document,
+                    number_of_results=10
+                )
+
+                if not sources:
+
+                    st.error(
+                        "❌ I couldn't find relevant topics "
+                        "in your uploaded material."
                     )
 
-                st.markdown(answer)
+                else:
+
+                    context = create_context(
+                        sources,
+                        maximum_characters=12000
+                    )
+
+                    with st.spinner(
+                        "🤖 EduNexus is creating your personalized plan..."
+                    ):
+
+                        answer = generate_ai_response(
+                            f"""
+                            Create a detailed {days}-day study plan.
+
+                            Study goal:
+                            {goal}
+
+                            Study time:
+                            {hours} hours per day.
+
+                            Difficulty:
+                            {difficulty}
+
+                            Focus topic:
+                            {search_topic}
+
+                            IMPORTANT RULES:
+
+                            1. Use ONLY topics that appear
+                               in the supplied study material.
+
+                            2. Do not invent topics.
+
+                            3. Divide every day into:
+                               • Learning
+                               • Revision
+                               • Practice
+
+                            4. Include a final revision
+                               before the last day.
+
+                            5. Keep the workload realistic
+                               for {hours} hours per day.
+
+                            6. Clearly organize the answer
+                               day by day.
+
+                            Use this format:
+
+                            DAY 1
+                            Learning:
+                            - Topic
+                            - Topic
+
+                            Revision:
+                            - Topic
+
+                            Practice:
+                            - Task
+
+                            Estimated Time:
+                            X hours
+
+                            Priority:
+                            High/Medium/Low
+
+                            Repeat this structure
+                            for every day.
+
+                            Make the plan practical
+                            for a college student.
+                            """,
+                            context
+                        )
+
+                    # ----------------------------------------
+                    # SAVE GENERATED PLAN
+                    # ----------------------------------------
+
+                    st.session_state.study_plan = answer
+                    st.session_state.study_plan_topic = search_topic
+                    st.session_state.study_plan_days = days
+                    st.session_state.study_plan_hours = hours
+
+                    save_activity(
+                        "Study Planner",
+                        search_topic,
+                        st.session_state.selected_document
+                    )
+
+            # ------------------------------------------------
+            # DISPLAY PLAN
+            # ------------------------------------------------
+
+            if "study_plan" in st.session_state:
+
+                st.markdown(
+                    "## 🚀 Your Personalized Study Plan"
+                )
+
+                st.markdown(
+                    f"""
+                    <div class="card">
+
+                        <div class="card-title">
+                        🎯 Goal: {goal}
+                        </div>
+
+                        <div class="card-text">
+
+                        📚 Material:
+                        {st.session_state.selected_document}
+
+                        &nbsp;&nbsp; • &nbsp;&nbsp;
+
+                        📅 Duration:
+                        {st.session_state.study_plan_days} days
+
+                        &nbsp;&nbsp; • &nbsp;&nbsp;
+
+                        ⏱️ Daily:
+                        {st.session_state.study_plan_hours} hours
+
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                # --------------------------------------------
+                # PROGRESS
+                # --------------------------------------------
+
+                if "completed_tasks" not in st.session_state:
+
+                    st.session_state.completed_tasks = set()
+
+                # Count checkbox states
+                completed = len(
+                    st.session_state.completed_tasks
+                )
+
+                # Use a visual progress estimate
+                # based on generated plan
+                progress_value = min(
+                    completed / max(days * 3, 1),
+                    1.0
+                )
+
+                st.markdown(
+                    "### 📈 Your Progress"
+                )
+
+                progress_col1, progress_col2, progress_col3 = st.columns(3)
+
+                with progress_col1:
+
+                    st.metric(
+                        "Completed",
+                        completed
+                    )
+
+                with progress_col2:
+
+                    st.metric(
+                        "Study Days",
+                        days
+                    )
+
+                with progress_col3:
+
+                    st.metric(
+                        "Progress",
+                        f"{int(progress_value * 100)}%"
+                    )
+
+                st.progress(
+                    progress_value
+                )
+
+                # --------------------------------------------
+                # STUDY PLAN CONTENT
+                # --------------------------------------------
+
+                st.markdown(
+                    "### 📚 Daily Schedule"
+                )
+
+                # Split generated response into day sections
+                day_sections = re.split(
+                    r"(?=DAY\s+\d+)",
+                    st.session_state.study_plan,
+                    flags=re.IGNORECASE
+                )
+
+                displayed_days = 0
+
+                for section in day_sections:
+
+                    section = section.strip()
+
+                    if not section:
+                        continue
+
+                    day_match = re.search(
+                        r"DAY\s+(\d+)",
+                        section,
+                        re.IGNORECASE
+                    )
+
+                    if not day_match:
+                        continue
+
+                    day_number = int(
+                        day_match.group(1)
+                    )
+
+                    displayed_days += 1
+
+                    # ----------------------------------------
+                    # DAY CARD
+                    # ----------------------------------------
+
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background:white;
+                            border:1px solid #e5e7eb;
+                            border-radius:18px;
+                            padding:22px;
+                            margin:15px 0;
+                            box-shadow:
+                            0 5px 20px
+                            rgba(15,23,42,0.06);
+                        ">
+
+                            <div style="
+                                display:flex;
+                                justify-content:space-between;
+                                align-items:center;
+                            ">
+
+                                <div style="
+                                    font-size:20px;
+                                    font-weight:800;
+                                    color:#111827;
+                                ">
+                                    📅 DAY {day_number}
+                                </div>
+
+                                <div style="
+                                    background:#eff6ff;
+                                    color:#2563eb;
+                                    padding:7px 12px;
+                                    border-radius:20px;
+                                    font-size:12px;
+                                    font-weight:700;
+                                ">
+                                    ⏱ {hours} HOURS
+                                </div>
+
+                            </div>
+
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    # ----------------------------------------
+                    # TASKS
+                    # ----------------------------------------
+
+                    lines = section.splitlines()
+
+                    task_number = 0
+
+                    for line in lines:
+
+                        line = line.strip()
+
+                        if not line:
+                            continue
+
+                        # Remove markdown bullets
+                        clean_line = re.sub(
+                            r"^[-•*]\s*",
+                            "",
+                            line
+                        )
+
+                        # Skip headings
+                        if re.match(
+                            r"DAY\s+\d+",
+                            clean_line,
+                            re.IGNORECASE
+                        ):
+                            continue
+
+                        if clean_line.lower() in [
+                            "learning:",
+                            "revision:",
+                            "practice:",
+                            "estimated time:",
+                            "priority:"
+                        ]:
+                            st.markdown(
+                                f"**{clean_line}**"
+                            )
+                            continue
+
+                        # Display topic/task as checkbox
+                        if line.startswith(
+                            ("-", "•", "*")
+                        ):
+
+                            task_number += 1
+
+                            task_id = (
+                                f"day_{day_number}_"
+                                f"task_{task_number}"
+                            )
+
+                            checked = st.checkbox(
+                                clean_line,
+                                key=task_id
+                            )
+
+                            if checked:
+
+                                st.session_state.completed_tasks.add(
+                                    task_id
+                                )
+
+                            else:
+
+                                st.session_state.completed_tasks.discard(
+                                    task_id
+                                )
+
+                # --------------------------------------------
+                # STUDY MOTIVATION
+                # --------------------------------------------
+
+                if displayed_days > 0:
+
+                    st.markdown(
+                        """
+                        <div style="
+                            margin-top:25px;
+                            padding:22px;
+                            border-radius:18px;
+                            background:
+                            linear-gradient(
+                                135deg,
+                                #111827,
+                                #243b68
+                            );
+                            color:white;
+                            text-align:center;
+                        ">
+
+                            <div style="
+                                font-size:25px;
+                                font-weight:800;
+                            ">
+                                🔥 Keep Going!
+                            </div>
+
+                            <div style="
+                                margin-top:8px;
+                                color:#dbeafe;
+                            ">
+                                Small progress every day
+                                creates big results.
+                            </div>
+
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                # --------------------------------------------
+                # SOURCE MATERIAL
+                # --------------------------------------------
+
+                st.markdown(
+                    "### 📚 Material Used"
+                )
+
+                planner_sources = retrieve_information(
+                    st.session_state.study_plan_topic,
+                    st.session_state.selected_document,
+                    number_of_results=6
+                )
 
                 display_sources(
-                    sources
+                    planner_sources
                 )
-
-                save_activity(
-                    "Study Planner",
-                    search_topic,
-                    st.session_state.selected_document
-                )
-
 
 # ============================================================
 # ANALYTICS
